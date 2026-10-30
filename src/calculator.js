@@ -1,6 +1,11 @@
-// Supported operations: addition (+), subtraction (-), multiplication (*), and division (/).
+// Supported operations: addition (+), subtraction (-), multiplication (*), division (/),
+// modulo (%), exponentiation (**), and square root (sqrt).
 
-const usage = 'Usage: node src/calculator.js <first-number> <operator> <second-number>';
+const usage = [
+  'Usage:',
+  '  node src/calculator.js <first-number> <operator> <second-number>',
+  '  node src/calculator.js sqrt <number>',
+].join('\n');
 
 function validateOperands(first, second) {
   if (!Number.isFinite(first) || !Number.isFinite(second)) {
@@ -30,7 +35,44 @@ function divide(first, second) {
     throw new RangeError('Division by zero is not allowed.');
   }
 
-  return first / second;
+  return finiteResult(first / second);
+}
+
+function modulo(first, second) {
+  validateOperands(first, second);
+
+  if (second === 0) {
+    throw new RangeError('Modulo by zero is not allowed.');
+  }
+
+  return finiteResult(first % second);
+}
+
+function power(base, exponent) {
+  validateOperands(base, exponent);
+  return finiteResult(base ** exponent);
+}
+
+const exponentiate = power;
+
+function squareRoot(value) {
+  if (!Number.isFinite(value)) {
+    throw new TypeError('The operand must be a valid finite number.');
+  }
+
+  if (value < 0) {
+    throw new RangeError('Square root of a negative number is not allowed.');
+  }
+
+  return finiteResult(Math.sqrt(value));
+}
+
+function finiteResult(result) {
+  if (!Number.isFinite(result)) {
+    throw new RangeError('The result must be a finite number.');
+  }
+
+  return result;
 }
 
 const operations = {
@@ -38,10 +80,13 @@ const operations = {
   '-': subtract,
   '*': multiply,
   '/': divide,
+  '%': modulo,
+  '**': power,
+  sqrt: squareRoot,
 };
 
 function calculate(first, operator, second) {
-  const operation = operations[operator];
+  const operation = Object.hasOwn(operations, operator) ? operations[operator] : undefined;
 
   if (!operation) {
     throw new Error(`Unsupported operator: ${operator}`);
@@ -57,6 +102,20 @@ function fail(message) {
 }
 
 function main(args) {
+  if (args[0] === 'sqrt') {
+    if (args.length !== 2 || args[1].trim() === '') {
+      fail('Square root expects one valid finite number.');
+      return;
+    }
+
+    try {
+      console.log(calculate(Number(args[1]), 'sqrt'));
+    } catch (error) {
+      fail(error.message);
+    }
+    return;
+  }
+
   if (args.length !== 3) {
     fail('Expected two numbers and one operator.');
     return;
@@ -83,4 +142,14 @@ if (require.main === module) {
   main(process.argv.slice(2));
 }
 
-module.exports = { add, subtract, multiply, divide, calculate };
+module.exports = {
+  add,
+  subtract,
+  multiply,
+  divide,
+  modulo,
+  power,
+  exponentiate,
+  squareRoot,
+  calculate,
+};
